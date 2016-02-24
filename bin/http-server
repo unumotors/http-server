@@ -32,7 +32,7 @@ if (argv.h || argv.help) {
     '  -U --utc     Use UTC time format in log messages.',
     '',
     '  -P --proxy   Fallback proxy if the request cannot be resolved. e.g.: http://someurl.com',
-    '',
+    '  --push-state Enable HTML5 push state mode where all URIs respond with index.html. [false]',
     '  -S --ssl     Enable https.',
     '  -C --cert    Path to ssl cert file (default: cert.pem).',
     '  -K --key     Path to ssl key file (default: key.pem).',
@@ -102,6 +102,14 @@ function listen(port) {
     proxy: proxy
   };
 
+  if (argv['push-state']) {
+    options.pushState = true;
+
+    if (options.proxy || options.autoIndex) {
+      logger.info('Proxy and Auto Indexing are not supported with Push State.'.red);
+    }
+  }
+
   if (argv.cors) {
     options.cors = true;
     if (typeof argv.cors === 'string') {
@@ -142,6 +150,10 @@ function listen(port) {
 
     if (typeof proxy === 'string') {
       logger.info('Unhandled requests will be served from: ' + proxy);
+    }
+
+    if (options.pushState) {
+      logger.info('HTML5 Push State is enabled, all URLs will be changed to the index page.');
     }
 
     logger.info('Hit CTRL-C to stop the server');

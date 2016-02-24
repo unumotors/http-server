@@ -154,5 +154,58 @@ vows.describe('http-server').addBatch({
         assert.ok(res.headers['access-control-allow-headers'].split(/\s*,\s*/g).indexOf('X-Test') >= 0, 204);
       }
     }
+  },
+  'When push-state is enabled': {
+    topic: function () {
+      var pushStateRoot = path.join(__dirname, 'fixtures', 'pushStateRoot');
+
+      var server = httpServer.createServer({
+        root: pushStateRoot,
+        pushState: true
+      });
+      // NOTE: using 8083 because the 808[1-2] are both active and not yet shutdown.
+      server.listen(8083);
+
+      this.callback(null, server);
+    },
+    'and a non-existant file is requested': {
+      topic: function () {
+        request('http://127.0.0.1:8083/404', this.callback);
+      },
+      'status code should be 200': function (res) {
+        assert.equal(res.statusCode, 200);
+      },
+      'and file content': {
+        topic: function (res, body) {
+          var self = this;
+          var pushStateRoot = path.join(__dirname, 'fixtures', 'pushStateRoot');
+
+          fs.readFile(path.join(pushStateRoot, 'index.html'), 'utf8', function (err, data) {
+            self.callback(err, data, body);
+          });
+        },
+        'should match content of served file': function (err, file, body) {
+          assert.equal(body.trim(), file.trim());
+        }
+      }
+    },
+    'and a file exists': {
+      topic: function () {
+        request('http://127.0.0.1:8083/app.js', this.callback);
+      },
+      'and file content': {
+        topic: function (res, body) {
+          var self = this;
+          var pushStateRoot = path.join(__dirname, 'fixtures', 'pushStateRoot');
+
+          fs.readFile(path.join(pushStateRoot, 'app.js'), 'utf8', function (err, data) {
+            self.callback(err, data, body);
+          });
+        },
+        'should match content of served file': function (err, file, body) {
+          assert.equal(body.trim(), file.trim());
+        }
+      }
+    }
   }
 }).export(module);
